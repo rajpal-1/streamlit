@@ -3,11 +3,9 @@
   "compilerOptions": {
     "checkJs": false,
     "baseUrl": ".",
-    "noEmit": false,
-    "emitDeclarationOnly": true,
     "declaration": true,
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": "src"
   },
   "include": ["src", "declarations.d.ts"],
   "exclude": ["node_modules/**/*", "**/proto.js"]
