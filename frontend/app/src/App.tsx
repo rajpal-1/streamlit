@@ -655,8 +655,6 @@ export class App extends PureComponent<Props, State> {
         })
       }
 
-      setCookie("_streamlit_xsrf", "")
-
       if (this.sessionInfo.isSet) {
         this.sessionInfo.clearCurrent()
       }
