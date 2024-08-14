@@ -16,11 +16,20 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Iterator, Mapping, NoReturn, Union
 
+from streamlit import runtime
 from streamlit.errors import StreamlitAPIException
+from streamlit.proto.ForwardMsg_pb2 import ForwardMsg
 from streamlit.runtime.scriptrunner import get_script_run_ctx as _get_script_run_ctx
 
 if TYPE_CHECKING:
     from streamlit.runtime.scriptrunner.script_run_context import UserInfo
+
+
+def generate_login_redirect_url(provider: str | None = None) -> str:
+    base_url = "/authliblogin"
+    if provider is not None:
+        base_url += f"?provider={provider}"
+    return base_url
 
 
 def _get_user_info() -> UserInfo:
@@ -59,6 +68,35 @@ class UserInfoProxy(Mapping[str, Union[str, None]]):
         analytics.
 
     """
+
+    def login(
+        self, send_redirect_to_host: bool = False, provider: str | None = None
+    ) -> None:
+        context = _get_script_run_ctx()
+        if context is not None:
+            fwd_msg = ForwardMsg()
+            fwd_msg.auth_redirect.url = generate_login_redirect_url(provider=provider)
+            fwd_msg.auth_redirect.action_type = "login"
+            if send_redirect_to_host:
+                fwd_msg.auth_redirect.send_redirect_to_host = True
+            context.enqueue(fwd_msg)
+
+    def logout(self) -> None:
+        context = _get_script_run_ctx()
+        if context is not None:
+            context.user_info.clear()
+            session_id = context.session_id
+
+            if runtime.exists():
+                instance = runtime.get_instance()
+                instance._session_mgr.get_session_info(
+                    session_id
+                ).session._user_info = {}
+
+            fwd_msg = ForwardMsg()
+            fwd_msg.auth_redirect.url = "/authliblogout"
+            fwd_msg.auth_redirect.action_type = "logout"
+            context.enqueue(fwd_msg)
 
     def __getitem__(self, key: str) -> str | None:
         return _get_user_info()[key]
