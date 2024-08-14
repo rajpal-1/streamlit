@@ -18,6 +18,8 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Iterable, Iterator, MutableMapping
 from urllib import parse
 
+from typing_extensions import Self
+
 from streamlit.constants import EMBED_QUERY_PARAMS_KEYS
 from streamlit.errors import StreamlitAPIException
 from streamlit.proto.ForwardMsg_pb2 import ForwardMsg
@@ -33,6 +35,7 @@ class QueryParams(MutableMapping[str, str]):
     """
 
     _query_params: dict[str, list[str] | str] = field(default_factory=dict)
+    _disable_forward_msg: bool = False
 
     def __iter__(self) -> Iterator[str]:
         self._ensure_single_query_api_used()
@@ -134,6 +137,8 @@ class QueryParams(MutableMapping[str, str]):
         return str(self._query_params)
 
     def _send_query_param_msg(self) -> None:
+        if self._disable_forward_msg:
+            return
         # Avoid circular imports
         from streamlit.runtime.scriptrunner import get_script_run_ctx
 
@@ -143,9 +148,7 @@ class QueryParams(MutableMapping[str, str]):
         self._ensure_single_query_api_used()
 
         msg = ForwardMsg()
-        msg.page_info_changed.query_string = parse.urlencode(
-            self._query_params, doseq=True
-        )
+        msg.page_info_changed.query_string = self.to_string()
         ctx.query_string = msg.page_info_changed.query_string
         ctx.enqueue(msg)
 
@@ -167,7 +170,7 @@ class QueryParams(MutableMapping[str, str]):
         self,
         _dict: Iterable[tuple[str, str | Iterable[str]]]
         | SupportsKeysAndGetItem[str, str | Iterable[str]],
-    ):
+    ) -> Self:
         self._ensure_single_query_api_used()
         old_value = self._query_params.copy()
         self.clear_with_no_forward_msg(preserve_embed=True)
@@ -177,6 +180,11 @@ class QueryParams(MutableMapping[str, str]):
             # restore the original from before we made any changes.
             self._query_params = old_value
             raise
+        return self
+
+    def to_string(self) -> str:
+        """Convert this object to a string which can be joined to an existing URL with a '?' character."""
+        return parse.urlencode(self._query_params, doseq=True)
 
     def set_with_no_forward_msg(self, key: str, val: list[str] | str) -> None:
         self._query_params[key] = val
