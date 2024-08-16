@@ -246,6 +246,14 @@ describe("Sidebar Component", () => {
       iconImage: "https://docs.streamlit.io/logo.svg",
     })
 
+    const logoWithSize = Logo.create({
+      image:
+        "https://global.discourse-cdn.com/business7/uploads/streamlit/original/2X/8/8cb5b6c0e1fe4e4ebfd30b769204c0d30c332fec.png",
+      link: "www.example.com",
+      iconImage: "https://docs.streamlit.io/logo.svg",
+      imageSize: "small",
+    })
+
     it("renders spacer if no logo provided", () => {
       renderSidebar({ appLogo: null })
       expect(screen.getByTestId("stLogoSpacer")).toBeInTheDocument()
@@ -293,10 +301,10 @@ describe("Sidebar Component", () => {
       )
     })
 
-    it("renders logo - default image has no link", () => {
+    it("renders logo - default image has no link & medium size", () => {
       renderSidebar({ appLogo: imageOnly })
       expect(screen.queryByTestId("stLogoLink")).not.toBeInTheDocument()
-      expect(screen.getByTestId("stLogo")).toBeInTheDocument()
+      expect(screen.getByTestId("stLogo")).toHaveStyle({ height: "1.5rem" })
     })
 
     it("renders logo - image has link if provided", () => {
@@ -305,7 +313,12 @@ describe("Sidebar Component", () => {
         "href",
         "www.example.com"
       )
-      expect(screen.getByTestId("stLogo")).toBeInTheDocument()
+      expect(screen.getByTestId("stLogo")).toHaveStyle({ height: "1.5rem" })
+    })
+
+    it("renders logo - small size when specified", () => {
+      renderSidebar({ appLogo: logoWithSize })
+      expect(screen.getByTestId("stLogo")).toHaveStyle({ height: "1.25rem" })
     })
   })
 })

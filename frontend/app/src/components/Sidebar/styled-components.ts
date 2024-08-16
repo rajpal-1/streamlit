@@ -253,10 +253,31 @@ export const StyledLogoLink = styled.a(({}) => ({
   },
 }))
 
-export const StyledLogo = styled.img(({ theme }) => ({
-  height: "1.5rem",
+export interface StyledLogoProps {
+  size: string
+}
+
+function translateLogoHeight(size: string): string {
+  // Default logo size
+  let logoSize = "1.5rem"
+  if (size === "small") {
+    logoSize = "1.25rem"
+  } else if (size === "large") {
+    logoSize = "2.0rem"
+  }
+  return logoSize
+}
+
+export const StyledLogo = styled.img<StyledLogoProps>(({ size, theme }) => ({
+  height: translateLogoHeight(size),
   maxWidth: "15rem",
-  margin: "0.25rem 0.5rem 0.25rem 0",
+  // Extra margin to align small logo with sidebar collapse arrow
+  marginTop:
+    size == "small" ? `${theme.spacing.xs}` : `${theme.spacing.twoXS}`,
+  marginBottom:
+    size == "small" ? `${theme.spacing.xs}` : `${theme.spacing.twoXS}`,
+  marginLeft: 0,
+  marginRight: theme.spacing.sm,
   zIndex: theme.zIndices.header,
 }))
 
@@ -278,7 +299,7 @@ export const StyledSidebarOpenContainer =
       zIndex: theme.zIndices.header,
       display: "flex",
       justifyContent: "center",
-      alignItems: "start",
+      alignItems: "center",
 
       transition: "left 300ms",
       transitionDelay: "left 300ms",
@@ -299,6 +320,7 @@ export const StyledOpenSidebarButton = styled.div(({ theme }) => {
   return {
     zIndex: theme.zIndices.header,
     color,
+    marginTop: theme.spacing.twoXS,
 
     button: {
       "&:hover": {
