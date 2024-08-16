@@ -22,6 +22,7 @@ import {
   Alert as AlertProto,
   Arrow as ArrowProto,
   Audio as AudioProto,
+  AudioInput as AudioInputProto,
   BokehChart as BokehChartProto,
   ButtonGroup as ButtonGroupProto,
   Button as ButtonProto,
@@ -151,6 +152,10 @@ const Video = React.lazy(
 )
 
 // Lazy-load widgets.
+const AudioInput = React.lazy(
+  () => import("@streamlit/lib/src/components/widgets/AudioInput")
+)
+
 const Button = React.lazy(
   () => import("@streamlit/lib/src/components/widgets/Button")
 )
@@ -491,6 +496,14 @@ const RawElementNodeRenderer = (
           {...widgetProps}
         />
       )
+
+    case "audioInput": {
+      const audioInputProto = node.element.audioInput as AudioInputProto
+      widgetProps.disabled = widgetProps.disabled || audioInputProto.disabled
+      return (
+        <AudioInput key={audioInputProto.id} {...widgetProps}></AudioInput>
+      )
+    }
 
     case "button": {
       const buttonProto = node.element.button as ButtonProto
