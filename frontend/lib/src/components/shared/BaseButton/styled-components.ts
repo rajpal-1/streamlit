@@ -27,6 +27,7 @@ export enum BaseButtonKind {
   TERTIARY = "tertiary",
   LINK = "link",
   ICON = "icon",
+  ICON_ACTIVE = "iconActive",
   BORDERLESS_ICON = "borderlessIcon",
   BORDERLESS_ICON_ACTIVE = "borderlessIconActive",
   MINIMAL = "minimal",
@@ -35,6 +36,8 @@ export enum BaseButtonKind {
   HEADER_BUTTON = "header",
   HEADER_NO_PADDING = "headerNoPadding",
   ELEMENT_TOOLBAR = "elementToolbar",
+  PILLS = "pills",
+  PILLS_ACTIVE = "pillsActive",
 }
 
 export enum BaseButtonSize {
@@ -224,16 +227,29 @@ export const StyledSecondaryFormSubmitButton = styled(
 export const StyledIconButton = styled(
   StyledBaseButton
 )<RequiredBaseButtonProps>(({ size, theme }) => {
-  const iconPadding: Record<BaseButtonSize, string> = {
-    [BaseButtonSize.XSMALL]: theme.spacing.threeXS,
-    [BaseButtonSize.SMALL]: theme.spacing.twoXS,
-    [BaseButtonSize.MEDIUM]: theme.spacing.md,
-    [BaseButtonSize.LARGE]: theme.spacing.lg,
+  // const iconPadding: Record<BaseButtonSize, string> = {
+  //   [BaseButtonSize.XSMALL]: theme.spacing.threeXS,
+  //   [BaseButtonSize.SMALL]: theme.spacing.twoXS,
+  //   [BaseButtonSize.MEDIUM]: theme.spacing.md,
+  //   [BaseButtonSize.LARGE]: theme.spacing.lg,
+  // }
+  console.log("size", size)
+  let minWidth = "12rem"
+  if (size === BaseButtonSize.SMALL) {
+    minWidth = "8rem"
+  } else if (size === BaseButtonSize.LARGE) {
+    minWidth = "20rem"
   }
+
   return {
     backgroundColor: theme.colors.transparent,
-    border: `${theme.sizes.borderWidth} solid ${theme.colors.transparent}`,
-    padding: iconPadding[size],
+    border: `${theme.sizes.borderWidth} solid ${theme.colors.borderColor}`,
+    // padding: iconPadding[size],
+    flex: "1 1 0",
+    padding: 0,
+    maxWidth: minWidth, //theme.sizes.contentMaxWidth,
+    minWidth: minWidth,
+    // width: "max-content",
 
     "&:hover": {
       borderColor: theme.colors.primary,
@@ -251,6 +267,55 @@ export const StyledIconButton = styled(
       backgroundColor: theme.colors.lightGray,
       borderColor: theme.colors.transparent,
       color: theme.colors.gray,
+    },
+  }
+})
+
+export const StyledIconButtonActive = styled(
+  StyledIconButton
+)<RequiredBaseButtonProps>(({ theme }) => {
+  return {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+    color: theme.colors.white,
+    "&:hover": {
+      backgroundColor: theme.colors.transparent,
+      borderColor: theme.colors.primary,
+      color: theme.colors.primary,
+    },
+  }
+})
+
+export const StyledPillsButton = styled(
+  StyledBaseButton
+)<RequiredBaseButtonProps>(({ theme }) => {
+  return {
+    background: theme.colors.white,
+    border: `${theme.sizes.borderWidth} solid ${theme.colors.borderColor}`,
+    borderRadius: theme.radii.xxl,
+    padding: `${theme.spacing.twoXS}`,
+    fontSize: theme.fontSizes.sm,
+    fontWeight: 400,
+    minHeight: 0,
+
+    "&:hover": {
+      borderColor: theme.colors.primary,
+      color: theme.colors.primary,
+    },
+  }
+})
+
+export const StyledPillsButtonActive = styled(
+  StyledPillsButton
+)<RequiredBaseButtonProps>(({ theme }) => {
+  return {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+    color: theme.colors.white,
+    "&:hover": {
+      backgroundColor: theme.colors.transparent,
+      borderColor: theme.colors.primary,
+      color: theme.colors.primary,
     },
   }
 })

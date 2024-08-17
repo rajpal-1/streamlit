@@ -34,7 +34,7 @@ from streamlit.elements.lib.options_selector_utils import (
 from streamlit.elements.lib.policies import check_widget_policies
 from streamlit.elements.lib.utils import (
     Key,
-    maybe_coerce_enum_sequence,
+    # maybe_coerce_enum_sequence,
     to_key,
 )
 from streamlit.elements.widgets.multiselect import MultiSelectSerde
@@ -148,6 +148,8 @@ def _build_proto(
     selection_visualization: ButtonGroupProto.SelectionVisualization.ValueType = (
         ButtonGroupProto.SelectionVisualization.ONLY_SELECTED
     ),
+    style: Literal["normal", "pills"] = "normal",
+    width: Literal["small", "medium", "large"] = "medium",
 ) -> ButtonGroupProto:
     proto = ButtonGroupProto()
 
@@ -156,6 +158,8 @@ def _build_proto(
     proto.form_id = current_form_id
     proto.disabled = disabled
     proto.click_mode = click_mode
+    proto.style = ButtonGroupProto.Style.Value(style.upper())
+    proto.width = width
 
     for formatted_option in formatted_options:
         proto.options.append(formatted_option)
@@ -300,7 +304,7 @@ class ButtonGroupMixin:
             transformed_options,
             default=None,
             key=key,
-            click_mode=ButtonGroupProto.SINGLE_SELECT,
+            selection_mode=ButtonGroupProto.SINGLE_SELECT,
             disabled=disabled,
             deserializer=serde.deserialize,
             serializer=serde.serialize,
@@ -311,21 +315,36 @@ class ButtonGroupMixin:
         )
         return sentiment.value
 
-    # Disable this more generic widget for now
-    # @gather_metrics("button_group")
-    def _internal_button_group(
+    @gather_metrics("button_group")
+    def button_group(
         self,
         options: OptionSequence[V],
         *,
         key: Key | None = None,
-        default: Sequence[Any] | None = None,
-        click_mode: Literal["select", "multiselect"] = "select",
+        default: Sequence[V] | V | None = None,
+        selection_mode: Literal["select", "multiselect"] = "select",
         disabled: bool = False,
         format_func: Callable[[V], dict[str, str]] | None = None,
+        style: Literal["normal", "pills"] = "normal",
+        width: Literal["small", "medium", "large"] = "medium",
         on_change: WidgetCallback | None = None,
         args: WidgetArgs | None = None,
         kwargs: WidgetKwargs | None = None,
-    ) -> list[V]:
+    ) -> list[V] | V | None:
+        # when selection mode is a single-value selection, the default must be a single
+        # value too.
+        if (
+            default is not None
+            and not isinstance(default, str)
+            and isinstance(default, Sequence)
+            and selection_mode == "select"
+            and len(default) > 1
+        ):
+            raise StreamlitAPIException(
+                "The default argument to `st.button_group` must be a single value when "
+                "`selection_mode='select'`."
+            )
+
         def _transformed_format_func(x: V) -> ButtonGroupProto.Option:
             if format_func is None:
                 return ButtonGroupProto.Option(content=str(x))
@@ -338,27 +357,38 @@ class ButtonGroupMixin:
 
         indexable_options = convert_to_sequence_and_check_comparable(options)
         default_values = get_default_indices(indexable_options, default)
+
         serde = MultiSelectSerde(indexable_options, default_values)
 
         res = self._button_group(
             indexable_options,
             key=key,
             default=default_values,
-            click_mode=ButtonGroupProto.ClickMode.MULTI_SELECT
-            if click_mode == "multiselect"
+            selection_mode=ButtonGroupProto.ClickMode.MULTI_SELECT
+            if selection_mode == "multiselect"
             else ButtonGroupProto.SINGLE_SELECT,
             disabled=disabled,
             format_func=_transformed_format_func,
+            style=style,
+            width=width,
             serializer=serde.serialize,
             deserializer=serde.deserialize,
             on_change=on_change,
             args=args,
             kwargs=kwargs,
-            after_register_callback=lambda widget_state: maybe_coerce_enum_sequence(
-                widget_state, options, indexable_options
-            ),
+            # after_register_callback=lambda widget_state: maybe_coerce_enum_sequence(
+            #     widget_state, options, indexable_options
+            # ),
         )
-        return res.value
+
+        if selection_mode == "multiselect" and len(res.value) > 0:
+            return res.value
+
+        return (
+            res.value[0]
+            if selection_mode == "select" and res.value and len(res.value) > 0
+            else None
+        )
 
     def _button_group(
         self,
@@ -366,10 +396,12 @@ class ButtonGroupMixin:
         *,
         key: Key | None = None,
         default: list[int] | None = None,
-        click_mode: ButtonGroupProto.ClickMode.ValueType = (
+        selection_mode: ButtonGroupProto.ClickMode.ValueType = (
             ButtonGroupProto.SINGLE_SELECT
         ),
         disabled: bool = False,
+        style: Literal["normal", "pills"] = "normal",
+        width: Literal["small", "medium", "large"] = "medium",
         format_func: Callable[[V], ButtonGroupProto.Option] | None = None,
         deserializer: WidgetDeserializer[T],
         serializer: WidgetSerializer[T],
@@ -386,7 +418,11 @@ class ButtonGroupMixin:
     ) -> RegisterWidgetResult[T]:
         key = to_key(key)
 
-        check_widget_policies(self.dg, key, on_change, default_value=default)
+        _default = default
+        if default is not None and len(default) == 0:
+            _default = None
+
+        check_widget_policies(self.dg, key, on_change, default_value=_default)
 
         widget_name = "button_group"
         ctx = get_script_run_ctx()
@@ -403,7 +439,9 @@ class ButtonGroupMixin:
             options=formatted_options,
             default=default,
             form_id=form_id,
-            click_mode=click_mode,
+            click_mode=selection_mode,
+            style=style,
+            width=width,
             page=ctx.active_script_hash if ctx else None,
         )
 
@@ -413,8 +451,10 @@ class ButtonGroupMixin:
             default or [],
             disabled,
             form_id,
-            click_mode=click_mode,
+            click_mode=selection_mode,
             selection_visualization=selection_visualization,
+            style=style,
+            width=width,
         )
 
         widget_state = register_widget(
