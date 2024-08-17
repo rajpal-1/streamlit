@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
+import decamelize from "decamelize"
 import get from "lodash/get"
 import xxhash from "xxhashjs"
-import decamelize from "decamelize"
 
 import {
   Alert as AlertProto,

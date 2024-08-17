@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-import { ScriptRunState } from "@streamlit/lib/src/ScriptRunState"
 import { AppNode, BlockNode } from "@streamlit/lib/src/AppNode"
+import { ComponentRegistry } from "@streamlit/lib/src/components/widgets/CustomComponent"
+import { FileUploadClient } from "@streamlit/lib/src/FileUploadClient"
+import { Element } from "@streamlit/lib/src/proto"
+import { ScriptRunState } from "@streamlit/lib/src/ScriptRunState"
+import { SessionInfo } from "@streamlit/lib/src/SessionInfo"
+import { StreamlitEndpoints } from "@streamlit/lib/src/StreamlitEndpoints"
+import { EmotionTheme, getDividerColors } from "@streamlit/lib/src/theme"
+import { getElementWidgetID } from "@streamlit/lib/src/util/utils"
 import {
   FormsData,
   WidgetStateManager,
 } from "@streamlit/lib/src/WidgetStateManager"
-import { FileUploadClient } from "@streamlit/lib/src/FileUploadClient"
-import { ComponentRegistry } from "@streamlit/lib/src/components/widgets/CustomComponent"
-import { SessionInfo } from "@streamlit/lib/src/SessionInfo"
-import { StreamlitEndpoints } from "@streamlit/lib/src/StreamlitEndpoints"
-import { EmotionTheme, getDividerColors } from "@streamlit/lib/src/theme"
 
 export function shouldComponentBeEnabled(
   elementType: string,
@@ -172,4 +174,32 @@ export interface BaseBlockProps {
    * to use it, for example, in Dialogs to prevent fullscreen issues.
    */
   disableFullscreenMode?: boolean
+}
+
+/**
+ * Converts a key to a valid CSS class name.
+ *
+ * @param key - The key to convert.
+ * @returns A valid CSS class name.
+ */
+export function convertKeyToClassName(key: string): string {
+  if (!key) {
+    return ""
+  }
+  const className = key.trim().replace(/[^a-zA-Z0-9_-]/g, "-")
+  return "st-key-" + className
+}
+
+/**
+ * Return the user key extracted from the widget id, or undefined if the id does not
+ * have a user key.
+ */
+export function getElementKey(element: Element): string | undefined {
+  const elementId = getElementWidgetID(element)
+  if (!elementId) {
+    return undefined
+  }
+
+  const userKey = elementId.split("-", 3).pop()
+  return userKey === "None" ? undefined : userKey
 }

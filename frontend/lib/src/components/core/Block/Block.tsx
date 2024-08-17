@@ -43,6 +43,7 @@ import { useScrollToBottom } from "@streamlit/lib/src/hooks/useScrollToBottom"
 import {
   assignDividerColor,
   BaseBlockProps,
+  convertKeyToClassName,
   isComponentStale,
   shouldComponentBeEnabled,
 } from "./utils"
@@ -216,6 +217,7 @@ const ChildRenderer = (props: BlockPropsWithWidth): ReactElement => {
               }
 
               const key = getElementWidgetID(node.element) || index
+              console.log("key", key)
               return <ElementNodeRenderer key={key} {...childProps} />
             }
 
@@ -324,6 +326,8 @@ const VerticalBlock = (props: BlockPropsWithoutWidth): ReactElement => {
     ...props,
     ...{ width },
   }
+  const userKey = props.node.deltaBlock.key
+
   // Widths of children autosizes to container width (and therefore window width).
   // StyledVerticalBlocks are the only things that calculate their own widths. They should never use
   // the width value coming from the parent via props.
@@ -338,7 +342,11 @@ const VerticalBlock = (props: BlockPropsWithoutWidth): ReactElement => {
       data-test-scroll-behavior="normal"
     >
       <StyledVerticalBlockWrapper ref={wrapperElement}>
-        <StyledVerticalBlock width={width} data-testid="stVerticalBlock">
+        <StyledVerticalBlock
+          width={width}
+          data-testid="stVerticalBlock"
+          className={userKey ? convertKeyToClassName(userKey) : undefined}
+        >
           <ChildRenderer {...propsWithNewWidth} />
         </StyledVerticalBlock>
       </StyledVerticalBlockWrapper>
